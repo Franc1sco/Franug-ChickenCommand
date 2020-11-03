@@ -67,6 +67,14 @@ public OnPluginStart()
 	BaseVelocityOffset=FindSendPropInfo("CBasePlayer","m_vecBaseVelocity");
 	if (BaseVelocityOffset==-1)
 		SetFailState("[BunnyHop] Error: Failed to find the BaseVelocity offset, aborting");
+		
+	for (new i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientInGame(i))
+		{
+			OnClientPutInServer(i);
+		}
+	}
 }
 
 public void OnMapStart()

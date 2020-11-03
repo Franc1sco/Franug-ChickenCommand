@@ -48,6 +48,9 @@ public OnPluginStart()
 {
 	HookEvent("player_spawn", Event_Player_Spawn);
 	HookEvent("player_jump", PlayerJump);
+	
+	RegAdminCmd("sm_gallina", Command_GiveGallina, ADMFLAG_BAN);
+	RegAdminCmd("sm_nogallina", Command_GiveNoGallina, ADMFLAG_BAN);
 
 	hPush = CreateConVar("sm_c4chicken_push","0.5", "push in jump for chicken");
 	hHeight = CreateConVar("sm_c4chicken_height","1.0", "height in jump for chicken");

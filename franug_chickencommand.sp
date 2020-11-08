@@ -46,15 +46,17 @@ public Plugin:myinfo =
 
 public OnPluginStart()
 {
-	HookEvent("player_spawn", Event_Player_Spawn);
+	HookEvent("player_spawn", Event_Player_Spawn, EventHookMode_Pre);
 	HookEvent("player_jump", PlayerJump);
+	
+	HookEvent("round_end", RoundEnd);
 	
 	RegAdminCmd("sm_gallina", Command_GiveGallina, ADMFLAG_BAN);
 	RegAdminCmd("sm_nogallina", Command_GiveNoGallina, ADMFLAG_BAN);
 
 	hPush = CreateConVar("sm_c4chicken_push","0.5", "push in jump for chicken");
 	hHeight = CreateConVar("sm_c4chicken_height","1.0", "height in jump for chicken");
-	SpeedGallina = CreateConVar("sm_c4chicken_speed", "0.9", "speed of chicken");
+	SpeedGallina = CreateConVar("sm_c4chicken_speed", "1.2", "speed of chicken");
 
 
 	// FIND OFFSET
@@ -73,6 +75,17 @@ public OnPluginStart()
 		if (IsClientInGame(i))
 		{
 			OnClientPutInServer(i);
+		}
+	}
+}
+
+public Action RoundEnd(Event event, const char[] name, bool dontBroadcast)
+{
+	for (new i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientInGame(i))
+		{
+			_gallina[i] = false;
 		}
 	}
 }
@@ -111,7 +124,18 @@ public OnClientPutInServer(client)
 public Action:OnWeaponCanUse(client, weapon)
 {
 	if(_gallina[client])
+	{
+		if(weapon > 0 && IsValidEntity(weapon))
+		{
+			char sWeapon[32]; 
+			if(!GetEdictClassname(weapon, sWeapon, sizeof(sWeapon)))
+				return Plugin_Continue;
+			
+			if(StrEqual(sWeapon, "weapon_knife") || StrEqual(sWeapon, "weapon_c4"))
+				return Plugin_Continue;
+		}
 		return Plugin_Handled;
+	}
 	
 	return Plugin_Continue;
 }
@@ -148,14 +172,18 @@ quitarGallina(int client)
 hacerGallina(int client)
 {
 	// soltar bomba
+	/*
 	int bomb = GetPlayerWeaponSlot(client, CS_SLOT_C4);
 	
 	if(bomb != -1)
 		CS_DropWeapon(client, bomb, false);
+	*/
 	
 	int weaponIndex;
 	for (int i = 0; i <= 5; i++)
 	{
+		if (i == CS_SLOT_C4)continue;
+		
 		if ((weaponIndex = GetPlayerWeaponSlot(client, i)) != -1)
 		{  
 			RemovePlayerItem(client, weaponIndex);
@@ -167,9 +195,17 @@ hacerGallina(int client)
 	
 	GivePlayerItem(client, "weapon_knife");
 	
+	SetEntityModel(client, "models/lduke/chicken/chicken2.mdl");
+	
 	new Float:pos[3];
 	GetEntPropVector(client, Prop_Send, "m_vecOrigin", pos);
 	EmitAmbientSound("knifefight/chicken.wav", pos, client, SNDLEVEL_NORMAL );
+	
+	SetEntityRenderMode(client, RENDER_TRANSCOLOR);
+	if(GetClientTeam(client) == CS_TEAM_CT)
+		SetEntityRenderColor(client, 0, 0, 255, 255);
+	else
+		SetEntityRenderColor(client, 255, 0, 0, 255);
 	
 	_gallina[client] = true;
 }
